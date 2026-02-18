@@ -1,0 +1,1348 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PostNord ISU Field App - Prototype</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+            overflow-x: hidden;
+        }
+
+        .app-container {
+            max-width: 420px;
+            margin: 0 auto;
+            background: white;
+            min-height: 100vh;
+            position: relative;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+
+        .header {
+            background: linear-gradient(135deg, #FFCC00 0%, #FF9900 100%);
+            color: #333;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .header-icons {
+            display: flex;
+            gap: 15px;
+        }
+
+        .icon-btn {
+            background: rgba(255,255,255,0.3);
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 20px;
+            transition: all 0.3s;
+        }
+
+        .icon-btn:active {
+            transform: scale(0.95);
+            background: rgba(255,255,255,0.5);
+        }
+
+        .mode-selector {
+            display: flex;
+            background: white;
+            padding: 10px;
+            gap: 5px;
+            overflow-x: auto;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .mode-btn {
+            flex: 1;
+            min-width: 80px;
+            padding: 12px 8px;
+            background: #f0f0f0;
+            border: 2px solid transparent;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+
+        .mode-btn.active {
+            background: #FFCC00;
+            border-color: #FF9900;
+            color: #333;
+        }
+
+        .camera-view {
+            background: #000;
+            height: 350px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .camera-placeholder {
+            color: white;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .camera-controls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .capture-btn {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: white;
+            border: 5px solid #FFCC00;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+        .capture-btn:active {
+            transform: scale(0.95);
+        }
+
+        .torch-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.2);
+            border: 2px solid white;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .torch-btn.active {
+            background: #FFCC00;
+            color: #333;
+        }
+
+        .scan-frame {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 280px;
+            height: 200px;
+            border: 3px solid #FFCC00;
+            border-radius: 10px;
+            box-shadow: 0 0 0 9999px rgba(0,0,0,0.5);
+        }
+
+        .scan-corners {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #FFCC00;
+        }
+
+        .corner-tl { top: -3px; left: -3px; border-right: none; border-bottom: none; }
+        .corner-tr { top: -3px; right: -3px; border-left: none; border-bottom: none; }
+        .corner-bl { bottom: -3px; left: -3px; border-right: none; border-top: none; }
+        .corner-br { bottom: -3px; right: -3px; border-left: none; border-top: none; }
+
+        .content-area {
+            padding: 20px;
+        }
+
+        .section {
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        .address-suggestions {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .suggestion-item {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .suggestion-item:last-child {
+            border-bottom: none;
+        }
+
+        .suggestion-item:active {
+            background: #f9f9f9;
+        }
+
+        .suggestion-item.selected {
+            background: #FFF8E1;
+            border-left: 4px solid #FFCC00;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: #555;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #FFCC00;
+            background: #FFFEF8;
+        }
+
+        .ocr-result {
+            background: #f9f9f9;
+            border: 2px dashed #FFCC00;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .ocr-text {
+            font-family: monospace;
+            margin-bottom: 10px;
+            padding: 10px;
+            background: white;
+            border-radius: 4px;
+        }
+
+        .alternative-names {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+
+        .alt-name-chip {
+            padding: 6px 12px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .alt-name-chip:active {
+            background: #FFCC00;
+            border-color: #FFCC00;
+        }
+
+        .toggle-group {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .toggle-item {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px;
+            background: #f9f9f9;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .toggle-item.active {
+            background: #E8F5E9;
+            border-color: #4CAF50;
+        }
+
+        .toggle-switch {
+            width: 50px;
+            height: 28px;
+            background: #ccc;
+            border-radius: 14px;
+            position: relative;
+            transition: all 0.3s;
+        }
+
+        .toggle-item.active .toggle-switch {
+            background: #4CAF50;
+        }
+
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            background: white;
+            border-radius: 50%;
+            top: 2px;
+            left: 2px;
+            transition: all 0.3s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .toggle-item.active .toggle-switch::after {
+            left: 24px;
+        }
+
+        .btn-primary {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #FFCC00 0%, #FF9900 100%);
+            border: none;
+            border-radius: 8px;
+            color: #333;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 10px rgba(255, 153, 0, 0.3);
+        }
+
+        .btn-primary:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 5px rgba(255, 153, 0, 0.3);
+        }
+
+        .btn-secondary {
+            width: 100%;
+            padding: 16px;
+            background: white;
+            border: 2px solid #FFCC00;
+            border-radius: 8px;
+            color: #333;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+
+        .btn-secondary:active {
+            background: #FFF8E1;
+        }
+
+        .floor-list {
+            margin-bottom: 20px;
+        }
+
+        .floor-item {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            overflow: hidden;
+        }
+
+        .floor-header {
+            padding: 15px;
+            background: #f5f5f5;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+        }
+
+        .apartment-list {
+            padding: 10px;
+            display: none;
+        }
+
+        .floor-item.expanded .apartment-list {
+            display: block;
+        }
+
+        .apartment-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: #fafafa;
+            border-radius: 6px;
+            margin-bottom: 8px;
+        }
+
+        .apartment-toggles {
+            display: flex;
+            gap: 10px;
+        }
+
+        .mini-toggle {
+            padding: 6px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .mini-toggle.yes {
+            background: #E8F5E9;
+            border-color: #4CAF50;
+        }
+
+        .mini-toggle.no {
+            background: #FFEBEE;
+            border-color: #F44336;
+        }
+
+        .todo-list {
+            margin-top: 20px;
+        }
+
+        .todo-item {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .todo-item:active {
+            background: #f9f9f9;
+        }
+
+        .todo-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .todo-type {
+            background: #FFCC00;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .todo-time {
+            color: #999;
+            font-size: 12px;
+        }
+
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            max-width: 420px;
+            width: 100%;
+            background: white;
+            border-top: 1px solid #ddd;
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+        }
+
+        .nav-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+            padding: 8px;
+            color: #666;
+            transition: all 0.2s;
+        }
+
+        .nav-item.active {
+            color: #FF9900;
+        }
+
+        .nav-icon {
+            font-size: 24px;
+        }
+
+        .nav-label {
+            font-size: 11px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            max-width: 90%;
+            width: 380px;
+            border-radius: 12px;
+            overflow: hidden;
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-header {
+            background: #FFCC00;
+            padding: 20px;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .modal-body {
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .modal-footer {
+            padding: 15px 20px;
+            border-top: 1px solid #eee;
+            display: flex;
+            gap: 10px;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #333;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            z-index: 2000;
+            display: none;
+            max-width: 90%;
+        }
+
+        .notification.show {
+            display: block;
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                transform: translate(-50%, -100%);
+                opacity: 0;
+            }
+            to {
+                transform: translate(-50%, 0);
+                opacity: 1;
+            }
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-draft { background: #FF9800; }
+        .status-sent { background: #2196F3; }
+        .status-applied { background: #4CAF50; }
+        .status-error { background: #F44336; }
+
+        .gps-indicator {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0,0,0,0.6);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .scanning-animation {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #FFCC00, transparent);
+            animation: scan 2s linear infinite;
+        }
+
+        @keyframes scan {
+            0% { transform: translateY(-100px); }
+            100% { transform: translateY(100px); }
+        }
+
+        .drag-handle {
+            cursor: move;
+            padding: 10px;
+            background: #f5f5f5;
+            text-align: center;
+            font-size: 12px;
+            color: #999;
+        }
+
+        .dragging {
+            opacity: 0.5;
+        }
+
+        .pb-100 {
+            padding-bottom: 100px;
+        }
+
+        .radio-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .radio-option {
+            flex: 1;
+            padding: 12px;
+            background: #f9f9f9;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .radio-option.selected {
+            background: #FFF8E1;
+            border-color: #FFCC00;
+        }
+
+        .search-box {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 14px 40px 14px 14px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+
+        .search-icon {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #999;
+        }
+
+        .info-box {
+            background: #E3F2FD;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .warning-box {
+            background: #FFF3E0;
+            border-left: 4px solid #FF9800;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="header">
+            <h1>ISU Field App</h1>
+            <div class="header-icons">
+                <button class="icon-btn" onclick="showMenu()">☰</button>
+            </div>
+        </div>
+
+        <div class="mode-selector">
+            <button class="mode-btn active" data-mode="movein" onclick="switchMode('movein')">Move In</button>
+            <button class="mode-btn" data-mode="moveout" onclick="switchMode('moveout')">Move Out</button>
+            <button class="mode-btn" data-mode="odr" onclick="switchMode('odr')">ODR</button>
+            <button class="mode-btn" data-mode="other" onclick="switchMode('other')">Other</button>
+        </div>
+
+        <div class="camera-view" id="cameraView">
+            <div class="camera-placeholder">
+                <div style="font-size: 48px; margin-bottom: 10px;">📷</div>
+                <div>Point camera at door/mailbox/nameplate</div>
+                <div style="font-size: 12px; margin-top: 5px; opacity: 0.7;">OCR will automatically detect text</div>
+            </div>
+            <div class="scan-frame">
+                <div class="scan-corners corner-tl"></div>
+                <div class="scan-corners corner-tr"></div>
+                <div class="scan-corners corner-bl"></div>
+                <div class="scan-corners corner-br"></div>
+                <div class="scanning-animation"></div>
+            </div>
+            <div class="gps-indicator">
+                <span>📍</span>
+                <span>GPS Active</span>
+            </div>
+            <div class="camera-controls">
+                <button class="torch-btn" id="torchBtn" onclick="toggleTorch()">💡</button>
+                <button class="capture-btn" onclick="captureImage()"></button>
+            </div>
+        </div>
+
+        <div class="content-area pb-100">
+            <!-- Move In Section -->
+            <div id="moveinSection" class="section active">
+                <div class="address-suggestions">
+                    <div class="suggestion-item selected" onclick="selectAddress(this)">
+                        <div style="font-weight: 600;">Storgatan 12, 11122 Stockholm</div>
+                        <div style="font-size: 12px; color: #666; margin-top: 4px;">District: Stockholm Central</div>
+                    </div>
+                    <div class="suggestion-item" onclick="selectAddress(this)">
+                        <div style="font-weight: 600;">Storgatan 14, 11122 Stockholm</div>
+                        <div style="font-size: 12px; color: #666; margin-top: 4px;">District: Stockholm Central</div>
+                    </div>
+                    <div class="suggestion-item" onclick="selectAddress(this)">
+                        <div style="font-weight: 600;">Storgatan 10, 11122 Stockholm</div>
+                        <div style="font-size: 12px; color: #666; margin-top: 4px;">District: Stockholm Central</div>
+                    </div>
+                </div>
+
+                <div class="ocr-result">
+                    <div style="font-weight: 600; margin-bottom: 10px;">📄 OCR Result</div>
+                    <div class="ocr-text">
+                        <div>Andersson</div>
+                        <div>Lägenhet 1201</div>
+                        <div>Ingen reklam</div>
+                    </div>
+                    <div style="font-size: 12px; color: #666;">Confidence: 95%</div>
+                    <div class="alternative-names">
+                        <div class="alt-name-chip" onclick="selectAltName(this)">Andersson</div>
+                        <div class="alt-name-chip" onclick="selectAltName(this)">Anderson</div>
+                        <div class="alt-name-chip" onclick="selectAltName(this)">Andersen</div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Name</label>
+                    <input type="text" class="form-input" value="Andersson" placeholder="Enter name">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Type</label>
+                    <div class="radio-group">
+                        <div class="radio-option selected">Private</div>
+                        <div class="radio-option">Business</div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Apartment Number (Official 4-digit)</label>
+                    <input type="text" class="form-input" value="1201" placeholder="e.g., 1201">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Walking Order</label>
+                    <input type="number" class="form-input" value="3" placeholder="e.g., 1, 2, 3...">
+                </div>
+
+                <div class="toggle-group">
+                    <div class="toggle-item" onclick="toggleItem(this)">
+                        <div>
+                            <div style="font-weight: 600; margin-bottom: 4px;">Advertising</div>
+                            <div style="font-size: 12px; color: #666;">Allow ads</div>
+                        </div>
+                        <div class="toggle-switch"></div>
+                    </div>
+                    <div class="toggle-item active" onclick="toggleItem(this)">
+                        <div>
+                            <div style="font-weight: 600; margin-bottom: 4px;">Free Paper</div>
+                            <div style="font-size: 12px; color: #666;">Free newspaper</div>
+                        </div>
+                        <div class="toggle-switch"></div>
+                    </div>
+                </div>
+
+                <div class="info-box">
+                    💡 "No advertising" sign detected - ODR automatically set to No
+                </div>
+
+                <button class="btn-primary" onclick="saveChange('draft')">💾 Save as Draft</button>
+                <button class="btn-secondary" onclick="saveChange('complete')">✅ Complete & Sync</button>
+            </div>
+
+            <!-- Move Out Section -->
+            <div id="moveoutSection" class="section">
+                <div class="info-box">
+                    📦 Batch Mode Active - Scan multiple envelopes in sequence
+                </div>
+
+                <div style="margin-bottom: 20px;">
+                    <div style="font-weight: 600; margin-bottom: 10px;">Scanned Envelopes (3)</div>
+                    
+                    <div style="background: white; border: 1px solid #ddd; border-radius: 8px; padding: 15px; margin-bottom: 10px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                            <div style="font-weight: 600;">Erik Svensson</div>
+                            <div style="color: #4CAF50; font-size: 12px;">✓ Verified</div>
+                        </div>
+                        <div style="font-size: 13px; color: #666;">Kungsgatan 45, Apt 302</div>
+                        <div style="font-size: 12px; color: #999; margin-top: 4px;">Forward to: Drottninggatan 12 → Vasagatan 8</div>
+                    </div>
+
+                    <div style="background: white; border: 1px solid #ddd; border-radius: 8px; padding: 15px; margin-bottom: 10px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                            <div style="font-weight: 600;">Maria Johansson</div>
+                            <div style="color: #4CAF50; font-size: 12px;">✓ Verified</div>
+                        </div>
+                        <div style="font-size: 13px; color: #666;">Storgatan 12, Apt 1201</div>
+                        <div style="font-size: 12px; color: #999; margin-top: 4px;">Forward to: Malmgatan 34</div>
+                    </div>
+
+                    <div style="background: white; border: 1px solid #FF9800; border-radius: 8px; padding: 15px; margin-bottom: 10px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                            <div style="font-weight: 600;">Anders Bergman</div>
+                            <div style="color: #FF9800; font-size: 12px;">⚠ Needs Review</div>
+                        </div>
+                        <div style="font-size: 13px; color: #666;">Unclear address - Manual input required</div>
+                    </div>
+                </div>
+
+                <button class="btn-primary" onclick="continueBatchScan()">📷 Continue Scanning</button>
+                <button class="btn-secondary" onclick="reviewBatch()">👁️ Review All</button>
+            </div>
+
+            <!-- ODR Section -->
+            <div id="odrSection" class="section">
+                <div class="address-suggestions" style="margin-bottom: 15px;">
+                    <div class="suggestion-item selected">
+                        <div style="font-weight: 600;">Storgatan 12, 11122 Stockholm</div>
+                        <div style="font-size: 12px; color: #666; margin-top: 4px;">Building view mode</div>
+                    </div>
+                </div>
+
+                <div class="floor-list">
+                    <div class="floor-item expanded">
+                        <div class="floor-header" onclick="toggleFloor(this)">
+                            <span>Ground Floor</span>
+                            <span>▼</span>
+                        </div>
+                        <div class="apartment-list">
+                            <div class="apartment-item">
+                                <div>
+                                    <div style="font-weight: 600;">Apt 0101 - Andersson</div>
+                                </div>
+                                <div class="apartment-toggles">
+                                    <div class="mini-toggle yes" onclick="toggleMini(this)">Ads: Yes</div>
+                                    <div class="mini-toggle yes" onclick="toggleMini(this)">Paper: Yes</div>
+                                </div>
+                            </div>
+                            <div class="apartment-item">
+                                <div>
+                                    <div style="font-weight: 600;">Apt 0102 - Karlsson</div>
+                                </div>
+                                <div class="apartment-toggles">
+                                    <div class="mini-toggle no" onclick="toggleMini(this)">Ads: No</div>
+                                    <div class="mini-toggle yes" onclick="toggleMini(this)">Paper: Yes</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="floor-item">
+                        <div class="floor-header" onclick="toggleFloor(this)">
+                            <span>Floor 1</span>
+                            <span>▶</span>
+                        </div>
+                        <div class="apartment-list">
+                            <div class="apartment-item">
+                                <div>
+                                    <div style="font-weight: 600;">Apt 1101 - Svensson</div>
+                                </div>
+                                <div class="apartment-toggles">
+                                    <div class="mini-toggle yes" onclick="toggleMini(this)">Ads: Yes</div>
+                                    <div class="mini-toggle no" onclick="toggleMini(this)">Paper: No</div>
+                                </div>
+                            </div>
+                            <div class="apartment-item">
+                                <div>
+                                    <div style="font-weight: 600;">Apt 1102 - Nilsson</div>
+                                </div>
+                                <div class="apartment-toggles">
+                                    <div class="mini-toggle yes" onclick="toggleMini(this)">Ads: Yes</div>
+                                    <div class="mini-toggle yes" onclick="toggleMini(this)">Paper: Yes</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="floor-item">
+                        <div class="floor-header" onclick="toggleFloor(this)">
+                            <span>Floor 2</span>
+                            <span>▶</span>
+                        </div>
+                        <div class="apartment-list">
+                            <div class="apartment-item">
+                                <div>
+                                    <div style="font-weight: 600;">Apt 1201 - Berg</div>
+                                </div>
+                                <div class="apartment-toggles">
+                                    <div class="mini-toggle yes" onclick="toggleMini(this)">Ads: Yes</div>
+                                    <div class="mini-toggle yes" onclick="toggleMini(this)">Paper: Yes</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="btn-primary" onclick="saveODRChanges()">💾 Save Changes</button>
+            </div>
+
+            <!-- Other Changes Section -->
+            <div id="otherSection" class="section">
+                <div class="form-group">
+                    <label class="form-label">Issue Type</label>
+                    <select class="form-input">
+                        <option>Missing nameplate</option>
+                        <option>Misspelled nameplate</option>
+                        <option>Wrong person on sign</option>
+                        <option>Door code changed</option>
+                        <option>Damaged/inaccessible mailbox</option>
+                        <option>Messy apartment numbers</option>
+                        <option>Other issue</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Address</label>
+                    <input type="text" class="form-input" value="Storgatan 12, 11122 Stockholm">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Description</label>
+                    <textarea class="form-input" rows="4" placeholder="Describe the issue in detail..."></textarea>
+                </div>
+
+                <div class="toggle-group">
+                    <div class="toggle-item active" onclick="toggleItem(this)">
+                        <div>
+                            <div style="font-weight: 600;">Requires Action</div>
+                            <div style="font-size: 12px; color: #666;">Flag for admin review</div>
+                        </div>
+                        <div class="toggle-switch"></div>
+                    </div>
+                </div>
+
+                <button class="btn-primary" onclick="submitIssue()">📤 Submit Issue</button>
+            </div>
+        </div>
+
+        <!-- Bottom Navigation -->
+        <div class="bottom-nav">
+            <div class="nav-item active" onclick="switchNav('scan')">
+                <div class="nav-icon">📷</div>
+                <div class="nav-label">Scan</div>
+            </div>
+            <div class="nav-item" onclick="switchNav('todo')">
+                <div class="nav-icon">📋</div>
+                <div class="nav-label">To-Do</div>
+            </div>
+            <div class="nav-item" onclick="switchNav('history')">
+                <div class="nav-icon">📜</div>
+                <div class="nav-label">History</div>
+            </div>
+            <div class="nav-item" onclick="switchNav('settings')">
+                <div class="nav-icon">⚙️</div>
+                <div class="nav-label">Settings</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Menu Modal -->
+    <div class="modal" id="menuModal">
+        <div class="modal-content">
+            <div class="modal-header">Menu</div>
+            <div class="modal-body">
+                <div style="padding: 15px; border-bottom: 1px solid #eee; cursor: pointer;" onclick="showToDoList()">
+                    📋 To-Do List
+                </div>
+                <div style="padding: 15px; border-bottom: 1px solid #eee; cursor: pointer;" onclick="showHistory()">
+                    📜 History
+                </div>
+                <div style="padding: 15px; border-bottom: 1px solid #eee; cursor: pointer;" onclick="showSettings()">
+                    ⚙️ Settings
+                </div>
+                <div style="padding: 15px; border-bottom: 1px solid #eee; cursor: pointer;" onclick="showSync()">
+                    🔄 Sync Status
+                </div>
+                <div style="padding: 15px; cursor: pointer;" onclick="logout()">
+                    🚪 Logout
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeModal('menuModal')" style="margin: 0;">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- To-Do Modal -->
+    <div class="modal" id="todoModal">
+        <div class="modal-content">
+            <div class="modal-header">To-Do List (3 items)</div>
+            <div class="modal-body">
+                <div class="todo-item">
+                    <div class="todo-header">
+                        <div class="todo-type">Move In</div>
+                        <div class="todo-time">2 hours ago</div>
+                    </div>
+                    <div style="font-weight: 600; margin-bottom: 5px;">Storgatan 12, Apt 1201</div>
+                    <div style="font-size: 13px; color: #666;">Andersson - Draft</div>
+                    <div style="margin-top: 8px;">
+                        <span class="status-indicator status-draft"></span>
+                        <span style="font-size: 12px;">Draft - Not synced</span>
+                    </div>
+                </div>
+
+                <div class="todo-item">
+                    <div class="todo-header">
+                        <div class="todo-type">ODR Update</div>
+                        <div class="todo-time">1 day ago</div>
+                    </div>
+                    <div style="font-weight: 600; margin-bottom: 5px;">Kungsgatan 45, Floor 3</div>
+                    <div style="font-size: 13px; color: #666;">5 apartments updated</div>
+                    <div style="margin-top: 8px;">
+                        <span class="status-indicator status-draft"></span>
+                        <span style="font-size: 12px;">Pending sync</span>
+                    </div>
+                </div>
+
+                <div class="warning-box">
+                    ⚠️ You have drafts older than 1 day. Please complete or sync them.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeModal('todoModal')" style="margin: 0;">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sync Status Modal -->
+    <div class="modal" id="syncModal">
+        <div class="modal-content">
+            <div class="modal-header">Sync Status</div>
+            <div class="modal-body">
+                <div style="margin-bottom: 20px;">
+                    <div style="font-weight: 600; margin-bottom: 10px;">Sync Queue (5 items)</div>
+                    <div style="background: #f9f9f9; padding: 15px; border-radius: 8px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                            <span>Move In</span>
+                            <span class="status-indicator status-sent"></span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                            <span>Move Out (Batch)</span>
+                            <span class="status-indicator status-sent"></span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                            <span>ODR Update</span>
+                            <span class="status-indicator status-draft"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 20px;">
+                    <div style="font-weight: 600; margin-bottom: 10px;">Last Sync</div>
+                    <div style="font-size: 14px; color: #666;">Today at 14:32</div>
+                </div>
+
+                <div style="margin-bottom: 20px;">
+                    <div style="font-weight: 600; margin-bottom: 10px;">Connection Status</div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span class="status-indicator status-applied"></span>
+                        <span style="color: #4CAF50; font-weight: 600;">Online</span>
+                    </div>
+                </div>
+
+                <button class="btn-primary" onclick="manualSync()">🔄 Sync Now</button>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeModal('syncModal')" style="margin: 0;">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification -->
+    <div class="notification" id="notification"></div>
+
+    <script>
+        let currentMode = 'movein';
+        let torchOn = false;
+        let currentNav = 'scan';
+
+        function switchMode(mode) {
+            currentMode = mode;
+            
+            // Update button states
+            document.querySelectorAll('.mode-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`[data-mode="${mode}"]`).classList.add('active');
+            
+            // Hide all sections
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            // Show selected section
+            const sectionMap = {
+                'movein': 'moveinSection',
+                'moveout': 'moveoutSection',
+                'odr': 'odrSection',
+                'other': 'otherSection'
+            };
+            
+            document.getElementById(sectionMap[mode]).classList.add('active');
+            
+            showNotification(`Switched to ${mode.replace(/([A-Z])/g, ' $1').trim()} mode`);
+        }
+
+        function toggleTorch() {
+            torchOn = !torchOn;
+            const btn = document.getElementById('torchBtn');
+            if (torchOn) {
+                btn.classList.add('active');
+                showNotification('Flashlight turned on');
+            } else {
+                btn.classList.remove('active');
+                showNotification('Flashlight turned off');
+            }
+        }
+
+        function captureImage() {
+            showNotification('📷 Image captured - Processing OCR...');
+            setTimeout(() => {
+                showNotification('✅ OCR completed - 95% confidence');
+            }, 1500);
+        }
+
+        function selectAddress(element) {
+            document.querySelectorAll('.suggestion-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+            element.classList.add('selected');
+            showNotification('Address selected');
+        }
+
+        function selectAltName(element) {
+            document.querySelectorAll('.alt-name-chip').forEach(chip => {
+                chip.style.background = 'white';
+            });
+            element.style.background = '#FFCC00';
+            document.querySelector('.form-input[placeholder="Enter name"]').value = element.textContent;
+            showNotification(`Name changed to ${element.textContent}`);
+        }
+
+        function toggleItem(element) {
+            element.classList.toggle('active');
+        }
+
+        function toggleFloor(element) {
+            const floorItem = element.parentElement;
+            const isExpanded = floorItem.classList.contains('expanded');
+            
+            floorItem.classList.toggle('expanded');
+            element.querySelector('span:last-child').textContent = isExpanded ? '▶' : '▼';
+        }
+
+        function toggleMini(element) {
+            if (element.classList.contains('yes')) {
+                element.classList.remove('yes');
+                element.classList.add('no');
+                element.textContent = element.textContent.replace('Yes', 'No');
+            } else {
+                element.classList.remove('no');
+                element.classList.add('yes');
+                element.textContent = element.textContent.replace('No', 'Yes');
+            }
+        }
+
+        function saveChange(type) {
+            if (type === 'draft') {
+                showNotification('💾 Saved as draft - Added to To-Do list');
+            } else {
+                showNotification('✅ Saved and queued for sync');
+                setTimeout(() => {
+                    showNotification('🔄 Synced successfully!');
+                }, 2000);
+            }
+        }
+
+        function saveODRChanges() {
+            showNotification('💾 ODR changes saved for 8 apartments');
+        }
+
+        function submitIssue() {
+            showNotification('📤 Issue submitted successfully');
+        }
+
+        function continueBatchScan() {
+            showNotification('📷 Ready to scan next envelope');
+        }
+
+        function reviewBatch() {
+            showNotification('👁️ Opening batch review...');
+        }
+
+        function showMenu() {
+            document.getElementById('menuModal').classList.add('active');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        function showToDoList() {
+            closeModal('menuModal');
+            document.getElementById('todoModal').classList.add('active');
+        }
+
+        function showSync() {
+            closeModal('menuModal');
+            document.getElementById('syncModal').classList.add('active');
+        }
+
+        function manualSync() {
+            showNotification('🔄 Syncing...');
+            setTimeout(() => {
+                showNotification('✅ Sync completed successfully!');
+                closeModal('syncModal');
+            }, 2000);
+        }
+
+        function showHistory() {
+            closeModal('menuModal');
+            showNotification('📜 History view - Coming soon');
+        }
+
+        function showSettings() {
+            closeModal('menuModal');
+            showNotification('⚙️ Settings - Coming soon');
+        }
+
+        function logout() {
+            closeModal('menuModal');
+            showNotification('🚪 Logging out...');
+        }
+
+        function switchNav(nav) {
+            currentNav = nav;
+            
+            // Update nav states
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            event.currentTarget.classList.add('active');
+            
+            if (nav === 'todo') {
+                showToDoList();
+            } else if (nav === 'history') {
+                showHistory();
+            } else if (nav === 'settings') {
+                showSettings();
+            }
+        }
+
+        function showNotification(message) {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.classList.add('show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+
+        // Close modals when clicking outside
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.classList.remove('active');
+                }
+            });
+        });
+
+        // Simulate GPS update
+        setInterval(() => {
+            // Simulated GPS activity indicator
+        }, 5000);
+
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', () => {
+            showNotification('👋 Welcome to ISU Field App - Ready to scan');
+        });
+    </script>
+</body>
+</html>
